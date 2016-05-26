@@ -1,14 +1,10 @@
 #ifndef IMU_H
 #define IMU_H
 
-#include "MKL05Z4.h"
+#include "common.h"
 
 #define ADXL_I2C_ADDR 0x53u
 #define ITG_I2C_ADDR 0x68u
-
-#ifndef _BV
-#define _BV(n) (1u << (n))
-#endif
 
 class i2c_slave {
   public:

@@ -84,6 +84,9 @@ adxl::sleep()
 void
 adxl::init()
 {
+  /* Accelerometer interrupt pin.  */
+  PORTA->PCR[9] = PORT_PCR_MUX(1);
+
   write_reg(ADXL_POWER_CTL, 0);
   write_reg(ADXL_INT_ENABLE, 0);
   write_reg(ADXL_INT_MAP, 0);
@@ -105,6 +108,9 @@ adxl::poll()
   int x, y, z;
   static int readings;
 
+  if ((FPTA->PDIR & _BV(9)) == 0) {
+      return;
+  }
   status = read_reg(ADXL_INT_SOURCE);
   if (status & ADXL_INT_ACTIVITY) {
       if (readings == 0) {
@@ -124,8 +130,5 @@ adxl::poll()
       } else {
 	  readings--;
       }
-
-  } else {
-      for (int i = 0; i < 100000; i++) __NOP();
   }
 }

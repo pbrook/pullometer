@@ -19,7 +19,7 @@ LINKER_SCRIPT = cmsis/MKL05Z4.ld
 
 SYS_OBJECTS = cmsis/startup_MKL05Z4.o cmsis/system_MKL05Z4.o
 
-OBJECTS = main.o imu.o adxl.o itg.o debugf.o support.o $(SYS_OBJECTS)
+OBJECTS = main.o strain.o imu.o adxl.o itg.o debugf.o support.o $(SYS_OBJECTS)
 
 .PHONY: all size
 
@@ -50,7 +50,7 @@ $(NAME).bin: $(NAME).elf
 upload: $(NAME).bin
 	cp $(NAME).bin ~/hs/kl26/$(NAME).KL05Z.bin
 clean:
-	rm -f $(OBJECTS) $(NAME).elf $(NAME).bin $(NAME).map
+	rm -f $(OBJECTS) $(NAME).elf $(NAME).bin $(NAME).map $(DEPS)
 
 $(OBJECTS): Makefile
 
