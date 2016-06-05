@@ -1,8 +1,14 @@
 #include "debugf.h"
 #include "imu.h"
 #include "strain.h"
+#include "rf24.h"
 
-#define PIN 2
+void
+delay_us(int n)
+{
+  while (n--)
+    DELAY1();
+}
 
 void
 init_uart(void)
@@ -59,6 +65,36 @@ volatile int i;
 adxl accel;
 itg_gyro gyro;
 
+RF24 rf24;
+
+static void
+do_tx(int val)
+{
+  static uint8_t msg[4];
+  static uint8_t seq;
+  static bool tx_active;
+  static int busy_count;
+  int rc;
+
+  if (tx_active) {
+      rc = rf24.tx_poll();
+      if (rc == -1) {
+	  busy_count++;
+	  return;
+      }
+      if (rc < 0) {
+	  //debugf("TX Failed %d\n", busy_count);
+      }
+  }
+  busy_count = 0;
+  msg[0] = seq++;
+  msg[1] = val >> 16;
+  msg[2] = val >> 8;
+  msg[3] = val;
+  rf24.tx(0, msg);
+  tx_active = 1;
+}
+
 int main()
 {
   long strain;
@@ -68,6 +104,8 @@ int main()
   gyro.init();
   gyro.sleep();
   debugf("Hello World\n");
+  rf24.init();
+  rf24.set_address(0xa11be115);
   FPTB->PSOR = _BV(8);
   while(1) {
       if (FPTA->PDIR & _BV(9)) {
@@ -75,17 +113,9 @@ int main()
       }
       strain = poll_strain();
       if (strain != STRAIN_BUSY) {
+	  do_tx(strain);
 	//debugf("Strain: %06x\n", strain);
       }
   }
   return 0;
-#if 0
-#define N 1000000
-  while(1) {
-      for (i = 0; i < N; i++) { }
-      FPTB->PSOR = _BV(PIN);
-      for (i = 0; i < N; i++) { }
-      FPTB->PCOR = _BV(PIN);
-  }
-#endif
 }

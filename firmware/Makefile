@@ -14,12 +14,12 @@ LDFLAGS = $(CPU) -Wl,--gc-sections --specs=nano.specs -Wl,-Map,$(NAME).map,--cre
 LIBS = -lm -lc -lgcc
 #-lnosys
 
-INCLUDES = -Icmsis
+INCLUDES = -Icmsis -I.
 LINKER_SCRIPT = cmsis/MKL05Z4.ld
 
 SYS_OBJECTS = cmsis/startup_MKL05Z4.o cmsis/system_MKL05Z4.o
 
-OBJECTS = main.o strain.o imu.o adxl.o itg.o debugf.o support.o $(SYS_OBJECTS)
+OBJECTS = main.o rf24.o strain.o imu.o adxl.o itg.o debugf.o support.o $(SYS_OBJECTS)
 
 .PHONY: all size
 

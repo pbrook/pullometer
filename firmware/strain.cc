@@ -12,8 +12,6 @@
 #define SET_SCK() FPTB->PSOR = _BV(6)
 #define CLEAR_SCK() FPTB->PCOR = _BV(6)
 
-#define DELAY1() do {__NOP(); __NOP(); __NOP();} while(0)
-
 long
 poll_strain()
 {
@@ -22,6 +20,7 @@ poll_strain()
 
   if (READ_DATA())
     return STRAIN_BUSY;
+
   val = 0;
   for (i = 0; i < 24; i++) {
     SET_SCK();
@@ -37,13 +36,6 @@ poll_strain()
   DELAY1();
   CLEAR_SCK();
   return val;
-}
-
-static void
-delay_us(int n)
-{
-  while (n--)
-    DELAY1();
 }
 
 void
