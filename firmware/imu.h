@@ -6,6 +6,8 @@
 #define ADXL_I2C_ADDR 0x53u
 #define ITG_I2C_ADDR 0x68u
 
+#define IMU_TICK_MS 10
+
 class i2c_slave {
   public:
     uint8_t addr;
@@ -21,6 +23,7 @@ public:
   adxl() : i2c_slave(ADXL_I2C_ADDR) {}
   void init();
   void sleep();
+  void wake();
   void poll();
 };
 
@@ -30,8 +33,13 @@ public:
   itg_gyro() : i2c_slave(ITG_I2C_ADDR) {}
   void init();
   void sleep();
+  void wake();
+  void poll();
 };
 
 void init_imu(void);
+void imu_tick(void);
+void imu_set_accel(float x, float y, float z);
+void imu_set_gyro(float x, float y, float z);
 
 #endif

@@ -86,49 +86,48 @@ adxl::init()
 {
   /* Accelerometer interrupt pin.  */
   PORTA->PCR[9] = PORT_PCR_MUX(1);
-
   write_reg(ADXL_POWER_CTL, 0);
   write_reg(ADXL_INT_ENABLE, 0);
   write_reg(ADXL_INT_MAP, 0);
-  write_reg(ADXL_BW_RATE, ADXL_BW_50HZ);
+  write_reg(ADXL_BW_RATE, ADXL_BW_100HZ);
   write_reg(ADXL_FIFO_CTL, 1);
   write_reg(ADXL_DATA_FORMAT, ADXL_FORMAT_4G);
   write_reg(ADXL_THRESH_ACT, 8); // 0.5G
   write_reg(ADXL_ACT_INACT_CTL, ADXL_ACT_AC | ADXL_ACT_X | ADXL_ADC_Y | ADXL_ACT_Z);
   read_reg(ADXL_INT_SOURCE);
   write_reg(ADXL_INT_ENABLE, ADXL_INT_ACTIVITY | ADXL_INT_DATA_READY);
-  write_reg(ADXL_POWER_CTL, ADXL_POWER_CTL_MEASURE | ADXL_POWER_CTL_SLEEP | ADXL_POWER_CTL_4HZ);
+  sleep();
 }
+
+void
+adxl::wake()
+{
+  write_reg(ADXL_POWER_CTL, 0);
+  write_reg(ADXL_POWER_CTL, ADXL_POWER_CTL_MEASURE | ADXL_POWER_CTL_4HZ);
+}
+
+// 10-bit signed integer with full scale +-4g
+#define SCALE (4.0f / 0x200)
 
 void
 adxl::poll()
 {
   uint8_t status;
   uint8_t data[6];
-  int x, y, z;
-  static int readings;
+  int16_t x, y, z;
 
   if ((FPTA->PDIR & _BV(9)) == 0) {
       return;
   }
   status = read_reg(ADXL_INT_SOURCE);
   if (status & ADXL_INT_ACTIVITY) {
-      if (readings == 0) {
-	  write_reg(ADXL_POWER_CTL, 0);
-	  write_reg(ADXL_POWER_CTL, ADXL_POWER_CTL_MEASURE | ADXL_POWER_CTL_4HZ);
-      }
-      readings = 10;
+      /* TODO: power control.  */
   }
   if (status & ADXL_INT_DATA_READY) {
       read_block(ADXL_DATA, 6, data);
       x = data[0] | (data[1] << 8);
       y = data[2] | (data[3] << 8);
       z = data[4] | (data[5] << 8);
-      debugf("%04x %04x %04x\r\n", x, y, z);
-      if (readings == 0) {
-	  sleep();
-      } else {
-	  readings--;
-      }
+      imu_set_accel(x * SCALE, y * SCALE, z * SCALE);
   }
 }

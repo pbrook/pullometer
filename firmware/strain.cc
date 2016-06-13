@@ -12,13 +12,15 @@
 #define SET_SCK() FPTB->PSOR = _BV(6)
 #define CLEAR_SCK() FPTB->PCOR = _BV(6)
 
+static bool disabled;
+
 long
 poll_strain()
 {
   long val;
   int i;
 
-  if (READ_DATA())
+  if (disabled || READ_DATA())
     return STRAIN_BUSY;
 
   val = 0;
@@ -31,11 +33,28 @@ poll_strain()
     if (READ_DATA())
       val |= 1;
   }
-  // Extra pulse
+  // Extra pulse to start next read
   SET_SCK();
   DELAY1();
   CLEAR_SCK();
   return val;
+}
+
+void
+sleep_strain()
+{
+  // Set SCK high to enter low power mode
+  SET_SCK();
+  delay_us(100);
+  disabled = true;
+}
+
+void
+wake_strain()
+{
+  // Enable chip
+  CLEAR_SCK();
+  disabled = false;
 }
 
 void
@@ -50,9 +69,5 @@ init_strain()
   FPTA->PDDR |= _BV(12);
   // 80Hz mode
   FPTA->PSOR = _BV(12);
-
-  // Set SCK high to enter low power mode
-  SET_SCK();
-  delay_us(100);
-  CLEAR_SCK();
+  sleep_strain();
 }

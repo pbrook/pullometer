@@ -14,7 +14,7 @@ LDFLAGS = $(CPU) -Wl,--gc-sections --specs=nano.specs -Wl,-Map,$(NAME).map,--cre
 LIBS = -lm -lc -lgcc
 #-lnosys
 
-INCLUDES = -Icmsis -I.
+INCLUDES = -Icmsis -Ieigen -I.
 LINKER_SCRIPT = cmsis/MKL05Z4.ld
 
 SYS_OBJECTS = cmsis/startup_MKL05Z4.o cmsis/system_MKL05Z4.o

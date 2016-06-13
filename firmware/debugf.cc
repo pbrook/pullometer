@@ -4,7 +4,7 @@
 #include "debugf.h"
 
 static void
-print_base(unsigned long val, uint8_t base, int size, char pad)
+print_base(unsigned long val, uint8_t base, int size, char pad, char sign)
 {
   char buf[12];
   int n;
@@ -21,6 +21,8 @@ print_base(unsigned long val, uint8_t base, int size, char pad)
     }
   if (n == 0)
     buf[n++] = '0';
+  if (sign)
+    buf[n++] = sign;
   while (n < size)
     buf[n++] = pad;
   while (n--)
@@ -55,6 +57,7 @@ debugf(const char * msg, ...)
   bool is_unsigned;
   bool is_long;
   unsigned long val;
+  char sign;
 
   va_start(va, msg);
   while (true)
@@ -103,9 +106,10 @@ more_format:
 		val = va_arg(va, unsigned long);
 	      else
 		val = va_arg(va, unsigned int);
-	      print_base(val, 16, size, pad);
+	      print_base(val, 16, size, pad, 0);
 	      break;
 	    case 'd':
+	      sign = 0;
 	      if (is_unsigned)
 		{
 		  if (is_long)
@@ -124,10 +128,10 @@ more_format:
 		  if (signedval < 0)
 		    {
 		      val = -val;
-		      debugf_putc('-');
+		      sign = '-';
 		    }
 		}
-	      print_base(val, 10, size, pad);
+	      print_base(val, 10, size, pad, sign);
 	      break;
 	    case 'c':
 	      debugf_putc(va_arg(va, int));
