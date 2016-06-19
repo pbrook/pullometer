@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 #include "debugf.h"
 
 static void
@@ -41,6 +42,32 @@ print_string(const char *s, int size)
     while (*s) {
         debugf_putc(*s);
         s++;
+    }
+}
+
+static void __attribute__((noinline))
+print_float(float val, int size, int prec)
+{
+    float frac;
+    float intval;
+    char sign;
+    char c;
+
+    if (val < 0) {
+        val = -val;
+        sign = '-';
+    } else {
+        sign = 0;
+    }
+    intval = floorf(val);
+    frac = val - intval;
+    print_base((unsigned long)intval, 10, size - (prec + 1), ' ', sign);
+    debugf_putc('.');
+    while (prec--) {
+        frac *= 10;
+        c = (int)frac;
+        frac -= c;
+        debugf_putc(c + '0');
     }
 }
 
@@ -127,6 +154,10 @@ debugf(const char * msg, ...)
                 break;
             case 's':
                 print_string(va_arg(va, const char *), size);
+                break;
+            case 'f':
+                print_float(va_arg(va, double), size, 2);
+                break;
             default:
                 msg--;
                 break;
