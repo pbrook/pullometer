@@ -64,12 +64,12 @@ i2c_read(uint8_t addr, uint8_t *data, int len)
 	}
 	*data = I2C0->D;
 	if (len == 0)
-	  return;
+            return;
 	i2c_wait();
 	if (dummy)
-	  dummy = false;
+            dummy = false;
 	else
-	  data++;
+            data++;
     }
 }
 
@@ -142,6 +142,7 @@ i2c_debrick(void)
 #define AUTOCAL_FACTOR 0.001
 
 static float max_speed; // Actually speed squared
+static int swing_count;
 static Vector3f max_accel;
 static Vector3f max_gyro;
 float attitude;
@@ -183,9 +184,7 @@ RotationTransform::recalibrate()
     // Assume that maximum rotational velocity coincides with bottom-dead-center.
     Vector3f vec = max_accel.normalized();
 
-    debugf("Recalibrating %d %d\n",
-	  (int)(gyro_vel * 180 / M_PI),
-	  (int)(max_speed * 180 / M_PI));
+    // TODO: detect when orientation has been changed and recalibrate quickly
     if (calibrated) {
 	gravity = gravity * (1 - AUTOCAL_FACTOR) + vec * AUTOCAL_FACTOR;
 	gravity.normalize();
@@ -197,10 +196,8 @@ RotationTransform::recalibrate()
     if (calibrated) {
 	float dir = vec.dot(rot_axis);
 	if (dir > 0) {
-	    debugf("Forward\n");
 	    vec = rot_axis * (1 - AUTOCAL_FACTOR) + vec * AUTOCAL_FACTOR;
 	} else {
-	    debugf("Reverse\n");
 	    vec = rot_axis * (1 - AUTOCAL_FACTOR) - vec * AUTOCAL_FACTOR;
 	}
 	rot_axis = vec.normalized();
@@ -239,10 +236,13 @@ imu_set_gyro(float x, float y, float z)
     raw_gyro = Vector3f(x, y, z);
 
     s2 = raw_gyro.squaredNorm();
-    if (s2 > max_speed) {
-	max_speed = s2;
-	max_gyro = raw_gyro;
-	max_accel = raw_accel;
+    if (s2 > GYRO_THRESHOLD2) {
+        if (s2 > max_speed) {
+            max_speed = s2;
+            max_gyro = raw_gyro;
+            max_accel = raw_accel;
+        }
+        swing_count++;
     }
 
     if (rt.calibrated) {
@@ -258,13 +258,17 @@ extern int gyro_z;
 void
 imu_tick(void)
 {
-    static int n;
     float err;
+    static float old_gyro;
 
     // automatic calibration
-    if ((fabsf(gyro_vel) < SLOW_THRESHOLD) && (max_speed > GYRO_THRESHOLD2)) {
-	rt.recalibrate();
+    if (fabsf(gyro_vel) < SLOW_THRESHOLD) {
+        // Ignore very short pulses
+        if (swing_count > 10) {
+            rt.recalibrate();
+        }
 	max_speed = 0;
+        swing_count = 0;
     }
     if (!rt.calibrated) {
 	return;
@@ -275,20 +279,24 @@ imu_tick(void)
 	err -= 2.0f * M_PI;
     else if (err < -M_PI)
 	err += 2.0f * M_PI;
-    attitude += (gyro_vel * DT) * (1.0f - ACCEL_FACTOR) + (err * ACCEL_FACTOR);
+    attitude += ((gyro_vel + old_gyro) * 0.5 * DT) * (1.0f - ACCEL_FACTOR) + (err * ACCEL_FACTOR);
+    old_gyro = gyro_vel;
 
     if (attitude > M_PI * 1.5f)
       attitude -= 2.0f * M_PI;
     if (attitude < -M_PI * 1.5f)
       attitude += 2.0f * M_PI;
+#if 0
+    static int n;
     if (++n >= 10) {
-      debugf("filter %4d, accel %4d, gyro %4d %4d\n",
-	  (int)(attitude * 180 / M_PI),
-	  (int)(accel_angle * 180 / M_PI),
-	  (int)(gyro_vel * 180 / M_PI),
-	  (gyro_z * 2000) / 0x8000);
-      n = 0;
+        debugf("filter %4d, accel %4d, gyro %6f %4d\n",
+            (int)(attitude * 180 / M_PI),
+            (int)(accel_angle * 180 / M_PI),
+            (gyro_vel * 180 / M_PI),
+            (gyro_z * 2000) / 0x8000);
+        n = 0;
     }
+#endif
 }
 
 void
