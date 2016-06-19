@@ -64,6 +64,7 @@ itg_gyro::wake()
 
 // 2000 degrees/sec full range signed 16bit int
 #define SCALE (2000.0f * M_PI / (180 * 0x8000))
+int gyro_z;
 
 void
 itg_gyro::poll(void)
@@ -87,6 +88,7 @@ itg_gyro::poll(void)
   y = (data[2] << 8) | data[3];
   z = (data[4] << 8) | data[5];
   imu_set_gyro(x * SCALE, y * SCALE, z * SCALE);
+  gyro_z = z;
 }
 
 void
