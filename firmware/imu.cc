@@ -140,6 +140,7 @@ i2c_debrick(void)
 #define SLOW_THRESHOLD (GYRO_THRESHOLD / 4)
 
 #define AUTOCAL_FACTOR 0.001
+#define MISALIGN_THRESHOLD 5
 
 static float max_speed; // Actually speed squared
 static int swing_count;
@@ -161,6 +162,7 @@ public:
     // Unit vectors along axes in 2D rotational plane
     Vector3f x_axis;
     Vector3f y_axis;
+    int misalign_count;
     bool calibrated;
 
     RotationTransform() {};
@@ -183,26 +185,38 @@ RotationTransform::recalibrate()
 {
     // Assume that maximum rotational velocity coincides with bottom-dead-center.
     Vector3f vec = max_accel.normalized();
+    bool misaligned = false;
 
-    // TODO: detect when orientation has been changed and recalibrate quickly
     if (calibrated) {
-	gravity = gravity * (1 - AUTOCAL_FACTOR) + vec * AUTOCAL_FACTOR;
-	gravity.normalize();
-    } else {
-	gravity = vec;
+        if (vec.dot(gravity) < 0.5)
+            misaligned = true;
+        if (misalign_count < MISALIGN_THRESHOLD) {
+            vec = gravity * (1 - AUTOCAL_FACTOR) + vec * AUTOCAL_FACTOR;
+            vec.normalize();
+        }
     }
+    gravity = vec;
 
     vec = max_gyro.normalized();
     if (calibrated) {
-	float dir = vec.dot(rot_axis);
-	if (dir > 0) {
-	    vec = rot_axis * (1 - AUTOCAL_FACTOR) + vec * AUTOCAL_FACTOR;
-	} else {
-	    vec = rot_axis * (1 - AUTOCAL_FACTOR) - vec * AUTOCAL_FACTOR;
+	float dot = vec.dot(rot_axis);
+	if (dot < 0) {
+            vec = -vec;
+            dot = -dot;
 	}
-	rot_axis = vec.normalized();
+        if (dot < 0.5)
+            misaligned = true;
+        if (misalign_count < MISALIGN_THRESHOLD) {
+            vec = rot_axis * (1 - AUTOCAL_FACTOR) + vec * AUTOCAL_FACTOR;
+            vec.normalize();
+        }
+    }
+    rot_axis = vec;
+
+    if (misaligned) {
+        misalign_count++;
     } else {
-	rot_axis = vec;
+        misalign_count = 0;
     }
     
     // Gravity should ideally be perpendicular to rotation.
