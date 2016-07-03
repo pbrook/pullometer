@@ -128,7 +128,6 @@ void
 RF24::init()
 {
   uint8_t tmp;
-  uint8_t config;
 
 #ifndef __MBED__
   /* CE */
@@ -145,8 +144,7 @@ RF24::init()
   spi_init();
 
   // 16-bit CRC
-  config = _BV(EN_CRC) | _BV(CRCO);
-  write_reg(CONFIG, config);
+  write_reg(CONFIG, _BV(EN_CRC) | _BV(CRCO));
   // 5-byte address
   write_reg(SETUP_AW, 3);
   // 1ms timeout, 3 retries
@@ -176,12 +174,21 @@ RF24::init()
   tmp = read_status();
   tmp &= _BV(MAX_RT) | _BV(TX_DS) | _BV(RX_DR);
   write_reg(STATUS, tmp);
+}
 
+void RF24::wake()
+{
+  uint8_t tmp;
   // power on device
-  write_reg(CONFIG, config | _BV(PWR_UP));
+  write_reg(CONFIG, read_reg(CONFIG) | _BV(PWR_UP));
   // Wait 1.5ms
   for (tmp = 0; tmp < 10; tmp++)
     udelay(150);
+}
+
+void RF24::sleep()
+{
+  write_reg(CONFIG, read_reg(CONFIG) & ~_BV(PWR_UP));
 }
 
 void
@@ -248,7 +255,7 @@ RF24::tx_avail()
 }
 
 void
-RF24::tx(uint8_t node, uint8_t *buf)
+RF24::tx(uint8_t node, const uint8_t *buf)
 {
   cmd(FLUSH_TX, NULL, NULL, 0);
   set_node(RX_ADDR_P0, node);

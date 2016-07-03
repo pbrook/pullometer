@@ -41,6 +41,8 @@ i2c_write(uint8_t addr, const uint8_t *data, int len, bool stop)
     }
     if (stop) {
 	I2C0->C1 &= ~I2C_C1_MST_MASK;
+        // Hack round timing issue???
+        delay_us(10);
     }
 }
 
@@ -61,6 +63,8 @@ i2c_read(uint8_t addr, uint8_t *data, int len)
 	} else if (len == 0) {
 	    // All bytes transferred, send STOP.
 	    I2C0->C1 &= ~(I2C_C1_MST_MASK | I2C_C1_TXAK_MASK);
+            // Hack round timing issue???
+            delay_us(10);
 	}
 	*data = I2C0->D;
 	if (len == 0)
@@ -117,6 +121,7 @@ i2c_debrick(void)
     FPTB->PCOR = _BV(3) | _BV(4);
     // Output clocks until data line released.
     while ((FPTB->PDIR & _BV(4)) == 0) {
+        debugf("Debrick\n");
 	FPTB->PDDR |= _BV(3);
 	i2c_delay();
 	FPTB->PDDR &= ~_BV(3);
@@ -320,4 +325,10 @@ init_imu(void)
     i2c_debrick();
     I2C0->F = 0;
     I2C0->C1 = I2C_C1_IICEN_MASK;
+}
+
+int16_t
+imu_current_pos()
+{
+    return (int16_t)(attitude * (0x4000 / M_PI));
 }

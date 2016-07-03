@@ -7,7 +7,7 @@ OBJCOPY = arm-none-eabi-objcopy
 SIZE = arm-none-eabi-size
 
 CPU = -mcpu=cortex-m0plus -mthumb
-CFLAGS = $(CPU) -Os -fshort-wchar -MMD
+CFLAGS = $(CPU) -Os -fshort-wchar -MMD -ffast-math -fsingle-precision-constant
 
 LDFLAGS = $(CPU) -Wl,--gc-sections --specs=nano.specs -Wl,-Map,$(NAME).map,--cref
 #-u _printf_float -u _scanf_float

@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define RF24_PACKET_LEN 4
+#define RF24_PACKET_LEN 5
 
 class RF24 {
 public:
@@ -13,13 +13,15 @@ public:
   // Returns payload length (or 0 if no packet present).
   uint8_t rx(uint8_t *buf);
   bool tx_avail();
-  void tx(uint8_t node, uint8_t *buf);
+  void tx(uint8_t node, const uint8_t *buf);
   /* -1: retry
      -2: error
       >=0: Success
       */
   int8_t tx_poll();
   void set_address(uint32_t addr);
+  void wake();
+  void sleep();
 private:
   uint8_t address[5];
   uint8_t cmd(uint8_t cmd, const uint8_t *data_in, uint8_t *data_out, uint8_t data_len);

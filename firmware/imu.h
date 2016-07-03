@@ -24,7 +24,7 @@ public:
   void init();
   void sleep();
   void wake();
-  void poll();
+  bool poll(bool sleep=false);
 };
 
 class itg_gyro : public i2c_slave
@@ -41,5 +41,6 @@ void init_imu(void);
 void imu_tick(void);
 void imu_set_accel(float x, float y, float z);
 void imu_set_gyro(float x, float y, float z);
+int16_t imu_current_pos();
 
 #endif

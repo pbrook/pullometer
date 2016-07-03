@@ -109,25 +109,29 @@ adxl::wake()
 // 10-bit signed integer with full scale +-4g
 #define SCALE (4.0f / 0x200)
 
-void
-adxl::poll()
+bool
+adxl::poll(bool sleep)
 {
   uint8_t status;
   uint8_t data[6];
   int16_t x, y, z;
 
   if ((FPTA->PDIR & _BV(9)) == 0) {
-      return;
+      return false;
   }
   status = read_reg(ADXL_INT_SOURCE);
-  if (status & ADXL_INT_ACTIVITY) {
-      /* TODO: power control.  */
-  }
   if (status & ADXL_INT_DATA_READY) {
       read_block(ADXL_DATA, 6, data);
-      x = data[0] | (data[1] << 8);
-      y = data[2] | (data[3] << 8);
-      z = data[4] | (data[5] << 8);
-      imu_set_accel(x * SCALE, y * SCALE, z * SCALE);
+      if (!sleep) {
+          x = data[0] | (data[1] << 8);
+          y = data[2] | (data[3] << 8);
+          z = data[4] | (data[5] << 8);
+          imu_set_accel(x * SCALE, y * SCALE, z * SCALE);
+      }
+  }
+  if (status & ADXL_INT_ACTIVITY) {
+      return true;
+  } else {
+      return false;
   }
 }
