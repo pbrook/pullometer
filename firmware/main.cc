@@ -22,11 +22,11 @@ init_uart(void)
   SIM->SOPT2 |= SIM_SOPT2_UART0SRC(3);
   SIM->SCGC4 |= SIM_SCGC4_UART0_MASK;
   PORTB->PCR[1] = PORT_PCR_MUX(2);
-  PORTB->PCR[2] = PORT_PCR_MUX(2);
-  // Rate = 4MHZ / (4 * SBR)
+  PORTB->PCR[2] = PORT_PCR_MUX(2) | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK;
+  // Rate = IRC / (oversample * SBR) = 4MHz / (4 * 9) ~= 115200
   UART0->BDH = 0;
-  UART0->BDL = 9; // 115200
-  UART0->C4 = 3; // 4x oversample
+  UART0->BDL = 9;
+  UART0->C4 = UART0_C4_OSR(3); // 4x oversample
   UART0->C1 = 0;
   UART0->C2 = UART0_C2_TE_MASK;
 #endif
@@ -95,7 +95,6 @@ PORTA_IRQHandler()
 static void
 init_irq()
 {
-  SMC->PMPROT = SMC_PMPROT_AVLP_MASK;
   // Gyro wakeup interrupt
   PORTA->PCR[11] = PORT_PCR_MUX(1);
   NVIC_EnableIRQ(PORTA_IRQn);
@@ -111,6 +110,7 @@ idle()
 void
 init(void)
 {
+  SMC->PMPROT = SMC_PMPROT_AVLP_MASK;
   SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTB_MASK;
   PORTB->PCR[8] = PORT_PCR_MUX(1);
   FPTB->PDDR |= _BV(8);
@@ -150,9 +150,9 @@ deep_sleep()
     __disable_irq();
     lptimer_sleep();
 
-    //FPTB->PCOR = _BV(9);
+    FPTB->PCOR = _BV(9);
     // Enable deep sleep mode
-    SCB->SCR = 1<<SCB_SCR_SLEEPDEEP_Pos;
+    SCB->SCR = SCB_SCR_SLEEPDEEP_Msk;
     // Set flash clock divider to x5 (800kHz) for VLPR mode
     SIM->CLKDIV1 |= SIM_CLKDIV1_OUTDIV4(4);
     // Enable VLPR/VLPS mode
@@ -160,8 +160,9 @@ deep_sleep()
 
     while (true) {
         __enable_irq();
-        if (accel.poll(true))
+        if (accel.poll(true)) {
             break;
+        }
         __disable_irq();
         // Unmask pin change interrupt for accelerometer wakeup
         PORTA->PCR[11] |= PORT_PCR_IRQC(0xc);
