@@ -77,33 +77,33 @@
 void
 adxl::sleep()
 {
-  write_reg(ADXL_POWER_CTL, 0);
-  write_reg(ADXL_POWER_CTL, ADXL_POWER_CTL_MEASURE | ADXL_POWER_CTL_SLEEP | ADXL_POWER_CTL_4HZ);
+    write_reg(ADXL_POWER_CTL, 0);
+    write_reg(ADXL_POWER_CTL, ADXL_POWER_CTL_MEASURE | ADXL_POWER_CTL_SLEEP | ADXL_POWER_CTL_4HZ);
 }
 
 void
 adxl::init()
 {
-  /* Accelerometer interrupt pin.  */
-  PORTA->PCR[9] = PORT_PCR_MUX(1);
-  write_reg(ADXL_POWER_CTL, 0);
-  write_reg(ADXL_INT_ENABLE, 0);
-  write_reg(ADXL_INT_MAP, 0);
-  write_reg(ADXL_BW_RATE, ADXL_BW_100HZ);
-  write_reg(ADXL_FIFO_CTL, 1);
-  write_reg(ADXL_DATA_FORMAT, ADXL_FORMAT_4G);
-  write_reg(ADXL_THRESH_ACT, 8); // 0.5G
-  write_reg(ADXL_ACT_INACT_CTL, ADXL_ACT_AC | ADXL_ACT_X | ADXL_ADC_Y | ADXL_ACT_Z);
-  read_reg(ADXL_INT_SOURCE);
-  write_reg(ADXL_INT_ENABLE, ADXL_INT_ACTIVITY | ADXL_INT_DATA_READY);
-  sleep();
+    /* Accelerometer interrupt pin.  */
+    PORTA->PCR[9] = PORT_PCR_MUX(1);
+    write_reg(ADXL_POWER_CTL, 0);
+    write_reg(ADXL_INT_ENABLE, 0);
+    write_reg(ADXL_INT_MAP, 0);
+    write_reg(ADXL_BW_RATE, ADXL_BW_100HZ);
+    write_reg(ADXL_FIFO_CTL, 1);
+    write_reg(ADXL_DATA_FORMAT, ADXL_FORMAT_4G);
+    write_reg(ADXL_THRESH_ACT, 8); // 0.5G
+    write_reg(ADXL_ACT_INACT_CTL, ADXL_ACT_AC | ADXL_ACT_X | ADXL_ADC_Y | ADXL_ACT_Z);
+    read_reg(ADXL_INT_SOURCE);
+    write_reg(ADXL_INT_ENABLE, ADXL_INT_ACTIVITY | ADXL_INT_DATA_READY);
+    sleep();
 }
 
 void
 adxl::wake()
 {
-  write_reg(ADXL_POWER_CTL, 0);
-  write_reg(ADXL_POWER_CTL, ADXL_POWER_CTL_MEASURE | ADXL_POWER_CTL_4HZ);
+    write_reg(ADXL_POWER_CTL, 0);
+    write_reg(ADXL_POWER_CTL, ADXL_POWER_CTL_MEASURE | ADXL_POWER_CTL_4HZ);
 }
 
 // 10-bit signed integer with full scale +-4g
@@ -112,26 +112,26 @@ adxl::wake()
 bool
 adxl::poll(bool sleep)
 {
-  uint8_t status;
-  uint8_t data[6];
-  int16_t x, y, z;
+    uint8_t status;
+    uint8_t data[6];
+    int16_t x, y, z;
 
-  if ((FPTA->PDIR & _BV(9)) == 0) {
-      return false;
-  }
-  status = read_reg(ADXL_INT_SOURCE);
-  if (status & ADXL_INT_DATA_READY) {
-      read_block(ADXL_DATA, 6, data);
-      if (!sleep) {
-          x = data[0] | (data[1] << 8);
-          y = data[2] | (data[3] << 8);
-          z = data[4] | (data[5] << 8);
-          imu_set_accel(x * SCALE, y * SCALE, z * SCALE);
-      }
-  }
-  if (status & ADXL_INT_ACTIVITY) {
-      return true;
-  } else {
-      return false;
-  }
+    if ((FPTA->PDIR & _BV(9)) == 0) {
+        return false;
+    }
+    status = read_reg(ADXL_INT_SOURCE);
+    if (status & ADXL_INT_DATA_READY) {
+        read_block(ADXL_DATA, 6, data);
+        if (!sleep) {
+            x = data[0] | (data[1] << 8);
+            y = data[2] | (data[3] << 8);
+            z = data[4] | (data[5] << 8);
+            imu_set_accel(x * SCALE, y * SCALE, z * SCALE);
+        }
+    }
+    if (status & ADXL_INT_ACTIVITY) {
+        return true;
+    } else {
+        return false;
+    }
 }

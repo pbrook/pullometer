@@ -9,7 +9,7 @@
 #define IMU_TICK_MS 10
 
 class i2c_slave {
-  public:
+public:
     uint8_t addr;
     i2c_slave(uint8_t _addr): addr(_addr) {}
     uint8_t read_reg(uint8_t addr);
@@ -20,21 +20,21 @@ class i2c_slave {
 class adxl : public i2c_slave
 {
 public:
-  adxl() : i2c_slave(ADXL_I2C_ADDR) {}
-  void init();
-  void sleep();
-  void wake();
-  bool poll(bool sleep=false);
+    adxl() : i2c_slave(ADXL_I2C_ADDR) {}
+    void init();
+    void sleep();
+    void wake();
+    bool poll(bool sleep=false);
 };
 
 class itg_gyro : public i2c_slave
 {
 public:
-  itg_gyro() : i2c_slave(ITG_I2C_ADDR) {}
-  void init();
-  void sleep();
-  void wake();
-  void poll();
+    itg_gyro() : i2c_slave(ITG_I2C_ADDR) {}
+    void init();
+    void sleep();
+    void wake();
+    void poll();
 };
 
 void init_imu(void);

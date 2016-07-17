@@ -17,57 +17,57 @@ static bool disabled;
 long
 poll_strain()
 {
-  long val;
-  int i;
+    long val;
+    int i;
 
-  if (disabled || READ_DATA())
-    return STRAIN_BUSY;
+    if (disabled || READ_DATA())
+        return STRAIN_BUSY;
 
-  val = 0;
-  for (i = 0; i < 24; i++) {
+    val = 0;
+    for (i = 0; i < 24; i++) {
+        SET_SCK();
+      DELAY1();
+      val <<= 1;
+      CLEAR_SCK();
+      DELAY1();
+      if (READ_DATA())
+          val |= 1;
+    }
+    // Extra pulse to start next read
     SET_SCK();
     DELAY1();
-    val <<= 1;
     CLEAR_SCK();
-    DELAY1();
-    if (READ_DATA())
-      val |= 1;
-  }
-  // Extra pulse to start next read
-  SET_SCK();
-  DELAY1();
-  CLEAR_SCK();
-  return val;
+    return val;
 }
 
 void
 sleep_strain()
 {
-  // Set SCK high to enter low power mode
-  SET_SCK();
-  delay_us(100);
-  disabled = true;
+    // Set SCK high to enter low power mode
+    SET_SCK();
+    delay_us(100);
+    disabled = true;
 }
 
 void
 wake_strain()
 {
-  // Enable chip
-  CLEAR_SCK();
-  disabled = false;
+    // Enable chip
+    CLEAR_SCK();
+    disabled = false;
 }
 
 void
 init_strain()
 {
-  PORTB->PCR[6] = PORT_PCR_MUX(1);
-  PORTB->PCR[13] = PORT_PCR_MUX(1);
-  PORTA->PCR[12] = PORT_PCR_MUX(1);
+    PORTB->PCR[6] = PORT_PCR_MUX(1);
+    PORTB->PCR[13] = PORT_PCR_MUX(1);
+    PORTA->PCR[12] = PORT_PCR_MUX(1);
 
-  FPTB->PDDR |= _BV(6);
-  FPTB->PDDR &= ~_BV(13);
-  FPTA->PDDR |= _BV(12);
-  // 80Hz mode
-  FPTA->PSOR = _BV(12);
-  sleep_strain();
+    FPTB->PDDR |= _BV(6);
+    FPTB->PDDR &= ~_BV(13);
+    FPTA->PDDR |= _BV(12);
+    // 80Hz mode
+    FPTA->PSOR = _BV(12);
+    sleep_strain();
 }

@@ -69,26 +69,26 @@ int gyro_z;
 void
 itg_gyro::poll(void)
 {
-  uint8_t data[6];
-  int16_t x, y, z;
-  uint8_t status;
+    uint8_t data[6];
+    int16_t x, y, z;
+    uint8_t status;
 
 
-  if (FPTA->PDIR & _BV(8)) {
-      return;
-  }
-  status = read_reg(ITG_STATUS);
-  if ((status & 1) == 0) {
-      // Should never happen
-      return;
-  }
+    if (FPTA->PDIR & _BV(8)) {
+        return;
+    }
+    status = read_reg(ITG_STATUS);
+    if ((status & 1) == 0) {
+        // Should never happen
+        return;
+    }
 
-  read_block(ITG_GYRO, 6, data);
-  x = (data[0] << 8) | data[1];
-  y = (data[2] << 8) | data[3];
-  z = (data[4] << 8) | data[5];
-  imu_set_gyro(x * SCALE, y * SCALE, z * SCALE);
-  gyro_z = z;
+    read_block(ITG_GYRO, 6, data);
+    x = (data[0] << 8) | data[1];
+    y = (data[2] << 8) | data[3];
+    z = (data[4] << 8) | data[5];
+    imu_set_gyro(x * SCALE, y * SCALE, z * SCALE);
+    gyro_z = z;
 }
 
 void
